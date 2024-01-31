@@ -19,7 +19,7 @@ type ComposeDBProps = {
   children: ReactNode;
 };
 
-const CERAMIC_URL = process.env.URL ?? "https://ceramic-temp.hirenodes.io";
+const CERAMIC_URL = process.env.URL ?? "http://localhost:7007";
 
 /**
  * Configure ceramic Client & create context.

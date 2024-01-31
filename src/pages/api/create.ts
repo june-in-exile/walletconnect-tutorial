@@ -3,11 +3,9 @@ import { Ed25519Provider } from "key-did-provider-ed25519";
 import KeyResolver from "key-did-resolver";
 import { type NextApiRequest, type NextApiResponse } from "next";
 import { fromString } from "uint8arrays/from-string";
-import * as pg from "pg";
-import { env } from '../../env';
+import { env } from "../../env";
 
-const {SECRET_KEY, DB_PASSWORD, DB_USER, DB_HOST, DB_PORT, DB_NAME} = env;
-const { Client } = pg;
+const { SECRET_KEY } = env;
 
 export default async function createCredential(
   req: NextApiRequest,
@@ -20,77 +18,49 @@ export default async function createCredential(
     };
     recipient: string;
     event: string;
-    code: string;
   }
 
-  const client = new Client({
-    password: DB_PASSWORD,
-    user: DB_USER,
-    host: DB_HOST,
-    port: Number(DB_PORT),
-    database: DB_NAME,
-  });
-
-  const { location, recipient, event, code }: RequestBody =
-    req.body as RequestBody;
+  const { location, recipient, event }: RequestBody = req.body as RequestBody;
 
   try {
     console.log(env);
-    if (code && SECRET_KEY) {
-      await client.connect();
-      const checkIfUsed = await client.query(
-        `SELECT * FROM is_used WHERE code='${code}'`,
-      );
-      if (!checkIfUsed.rows.length) {
-        await client.end();
-        return res.json({
-          err: "Code not found",
-        });
-      } else if ((checkIfUsed.rows[0] as { used: boolean }).used) {
-        await client.end();
-        return res.json({
-          err: "Code already used",
-        });
-      } else {
-        const key = fromString(SECRET_KEY, "base16");
-        const provider = new Ed25519Provider(key);
-        const staticDid = new DID({
-          resolver: KeyResolver.getResolver(),
-          provider,
-        });
+    if (SECRET_KEY) {
+      const key = fromString(SECRET_KEY, "base16");
+      const provider = new Ed25519Provider(key);
+      const staticDid = new DID({
+        resolver: KeyResolver.getResolver(),
+        provider,
+      });
 
-        await staticDid.authenticate();
-        const badge: {
-          recipient: string;
-          event: string;
-          timestamp: string;
-          latitude?: number; 
-          longitude?: number; 
-        } = {
-          recipient: recipient.toLowerCase(),
-          event: event,
-          timestamp: new Date().toISOString(),
-        };
-        location.latitude !== undefined && (badge.latitude = location.latitude);
-        location.longitude !== undefined && (badge.longitude = location.longitude);
-        console.log(badge);
+      await staticDid.authenticate();
+      const badge: {
+        recipient: string;
+        event: string;
+        timestamp: string;
+        latitude?: number;
+        longitude?: number;
+      } = {
+        recipient: recipient.toLowerCase(),
+        event: event,
+        timestamp: new Date().toISOString(),
+      };
+      location.latitude !== undefined && (badge.latitude = location.latitude);
+      location.longitude !== undefined &&
+        (badge.longitude = location.longitude);
+      console.log(badge);
 
-        const jws = await staticDid.createDagJWS(badge);
-        const jwsJsonStr = JSON.stringify(jws);
-        const jwsJsonB64 = Buffer.from(jwsJsonStr).toString("base64");
-        const completeBadge = {
-          ...badge,
-          jwt: jwsJsonB64,
-        };
-        await client.query(
-          `UPDATE is_used SET used=true WHERE code='${code}'`,
-        );
-        await client.end();
-        return res.json(completeBadge);
-      }
+      const jws = await staticDid.createDagJWS(badge);
+      const jwsJsonStr = JSON.stringify(jws);
+      const jwsJsonB64 = Buffer.from(jwsJsonStr).toString("base64");
+      const completeBadge = {
+        ...badge,
+        jwt: jwsJsonB64,
+      };
+
+      return res.json(completeBadge);
     } else {
       return res.json({
-        err: "Missing code or unique key",
+        err: "Missing unique key",
       });
     }
   } catch (err) {

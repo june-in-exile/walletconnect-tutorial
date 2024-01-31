@@ -30,7 +30,7 @@ const Navbar = () => {
               />
               </div>
               <div className="ml-3 text-lg font-bold text-white">
-                EthDenver24 Scavenger Hunt
+                Event Attendance Demo
               </div>
               </span>
               <div className="mt-4 ml-0 content-start flex flex-row w-full" >

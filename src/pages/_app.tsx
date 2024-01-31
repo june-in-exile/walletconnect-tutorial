@@ -5,7 +5,7 @@ import { WagmiConfig } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
 import "@/styles/globals.css";
 
-const PROJECT_ID = '86e78deb6cf634c706f45426dd186bf7'
+const PROJECT_ID = ''
 
 const chains = [mainnet]
 const wagmiConfig = defaultWagmiConfig({ chains, projectId: PROJECT_ID })

@@ -1,6 +1,6 @@
-## our broadest claim type
-interface EthDen24Attendance
-  @createModel(description: "An interface to query EthDenver 2024 attendance") {
+## our broadest attendance
+interface GeneralAttendance
+  @createModel(description: "An interface to query general attendance") {
   controller: DID! @documentAccount
   recipient: String! @string(minLength: 42, maxLength: 42)
   latitude: Float
@@ -9,8 +9,8 @@ interface EthDen24Attendance
   jwt: String! @string(maxLength: 100000)
 }
 
-type EthDen24DePin implements EthDen24Attendance
-  @createModel(accountRelation: SINGLE, description: "A depin attendance") {
+type EncryptionEvent implements GeneralAttendance
+  @createModel(accountRelation: SINGLE, description: "An encryption event attendance") {
   controller: DID! @documentAccount
   recipient: String! @string(minLength: 42, maxLength: 42)
   latitude: Float
@@ -19,8 +19,8 @@ type EthDen24DePin implements EthDen24Attendance
   jwt: String! @string(maxLength: 100000)
 }
 
-type EthDen24RepCon implements EthDen24Attendance
-  @createModel(accountRelation: SINGLE, description: "A RepConnect attendance") {
+type WalletEvent implements GeneralAttendance
+  @createModel(accountRelation: SINGLE, description: "A wallet event attendance") {
   controller: DID! @documentAccount
   recipient: String! @string(minLength: 42, maxLength: 42)
   latitude: Float

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useComposeDB } from "@/fragments";
 import { DNA } from "react-loader-spinner";
-import { DID, DagJWS } from "dids";
+import { DID, type DagJWS } from "dids";
+import { definition } from "@/__generated__/definition";
 import KeyResolver from "key-did-resolver";
 
 type Location = {
@@ -19,17 +20,18 @@ interface Event {
   jwt: string;
 }
 
-type RepConnect = Event;
-type DePin = Event;
+type Wallet = Event;
+type Encryption = Event;
 
 export default function Attest() {
   const [attesting, setAttesting] = useState(false);
   const [share, setShare] = useState(false);
   const { compose } = useComposeDB();
-  const [event, setEvent] = useState<"RepConnect" | "DePin" | "">("");
-  const [code, setCode] = useState<string | undefined>(undefined);
-  const [repBadge, setRepBadge] = useState<RepConnect | null>(null);
-  const [dePinBadge, setDePinBadge] = useState<DePin | null>(null);
+  const [event, setEvent] = useState<"Encryption" | "Wallet" | "">("");
+  const [encryptionBadge, setEncryptionBadge] = useState<Encryption | null>(
+    null,
+  );
+  const [walletBadge, setWalletBadge] = useState<Wallet | null>(null);
   const [userLocation, setUserLocation] = useState<Location>({
     latitude: undefined,
     longitude: undefined,
@@ -62,29 +64,24 @@ export default function Attest() {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     const eventItem = urlParams.get("event")?.split("?")[0];
-    const code = urlParams.get("event")?.split("?")[1]?.replace("code=", "");
-    console.log(code);
-    setCode(code);
     console.log(eventItem);
-    eventItem ===
-    "kjzl6hvfrbw6cay52x58x67ksgivtchsj8htrp9vv4lmi92qrnxzukevxoioc6u"
-      ? setEvent("RepConnect")
-      : eventItem ===
-          "kjzl6hvfrbw6c5xgsds5nt4hc3ko925rp7j8s9m361vuiw8jc27yo0p5wdb29sz"
-        ? setEvent("DePin")
+    eventItem === definition.models.EncryptionEvent.id
+      ? setEvent("Encryption")
+      : eventItem === definition.models.WalletEvent.id
+        ? setEvent("Wallet")
         : null;
 
     if (eventItem) {
       const data = await compose.executeQuery<{
         node: {
-          ethDen24RepCon: RepConnect | null;
-          ethDen24DePin: DePin | null;
+          encryptionEvent: Encryption | null;
+          walletEvent: Wallet | null;
         };
       }>(`
         query {
           node(id: "${localStorage.getItem("did")}") {
           ... on CeramicAccount {
-                ethDen24RepCon {
+                walletEvent {
                 id
                 recipient
                 latitude
@@ -92,7 +89,7 @@ export default function Attest() {
                 timestamp
                 jwt
                 }
-              ethDen24DePin {
+                encryptionEvent {
                 id
                 recipient
                 latitude
@@ -109,37 +106,40 @@ export default function Attest() {
         data as {
           data: {
             node: {
-              ethDen24RepCon: Event | null;
-              ethDen24DePin: Event | null;
+              encryptionEvent: Encryption | null;
+              walletEvent: Wallet | null;
             };
           };
         }
       ) {
         console.log("test");
-        const repCon = (
+        const encryption = (
           data as {
             data: {
               node: {
-                ethDen24RepCon: RepConnect | null;
-                ethDen24DePin: DePin | null;
+                encryptionEvent: Encryption | null;
+                walletEvent: Wallet | null;
               };
             };
           }
-        ).data.node.ethDen24RepCon;
-        console.log(repCon);
-        const dePin = (
+        ).data.node.encryptionEvent;
+        console.log(encryption);
+
+        const wallet = (
           data as {
             data: {
               node: {
-                ethDen24RepCon: RepConnect | null;
-                ethDen24DePin: DePin | null;
+                encryptionEvent: Encryption | null;
+                walletEvent: Wallet | null;
               };
             };
           }
-        ).data.node.ethDen24DePin;
-        if (dePin?.jwt) {
+        ).data.node.walletEvent;
+        console.log(wallet);
+
+        if (encryption?.jwt) {
           try {
-            const json = Buffer.from(dePin.jwt, "base64").toString();
+            const json = Buffer.from(encryption.jwt, "base64").toString();
             const parsed = JSON.parse(json) as { jws: DagJWS };
             console.log(parsed);
             const newDid = new DID({ resolver: KeyResolver.getResolver() });
@@ -150,15 +150,15 @@ export default function Attest() {
               didFromJwt ===
               "did:key:z6MkqusKQfvJm7CPiSRkPsGkdrVhTy8EVcQ65uB5H2wWzMMQ"
             ) {
-              dePin.verified = true;
+              encryption.verified = true;
             }
           } catch (e) {
             console.log(e);
           }
         }
-        if (repCon?.jwt) {
+        if (wallet?.jwt) {
           try {
-            const json = Buffer.from(repCon.jwt, "base64").toString();
+            const json = Buffer.from(wallet.jwt, "base64").toString();
             const parsed = JSON.parse(json) as { jws: DagJWS };
             console.log(parsed);
             const newDid = new DID({ resolver: KeyResolver.getResolver() });
@@ -169,23 +169,19 @@ export default function Attest() {
               didFromJwt ===
               "did:key:z6MkqusKQfvJm7CPiSRkPsGkdrVhTy8EVcQ65uB5H2wWzMMQ"
             ) {
-              repCon.verified = true;
+              wallet.verified = true;
             }
           } catch (e) {
             console.log(e);
           }
         }
-        setRepBadge(repCon);
-        setDePinBadge(dePin);
+        setEncryptionBadge(encryption);
+        setWalletBadge(wallet);
       }
     }
   };
 
   const createBadge = async () => {
-    if (!code) {
-      alert("No unique code provided");
-      return;
-    }
     if (!event) {
       alert("No event detected");
       return;
@@ -200,7 +196,6 @@ export default function Attest() {
         recipient: address,
         event,
         location: userLocation,
-        code,
       }),
     });
     type returnType = {
@@ -219,10 +214,10 @@ export default function Attest() {
       return;
     }
     const data =
-      event === "RepConnect" && finalClaim.latitude && finalClaim.longitude
+      event === "Wallet" && finalClaim.latitude && finalClaim.longitude
         ? await compose.executeQuery(`
     mutation{
-      createEthDen24RepCon(input: {
+      createWalletEvent(input: {
         content: {
           recipient: "${finalClaim.recipient}"
           latitude: ${finalClaim.latitude}
@@ -243,10 +238,10 @@ export default function Attest() {
       }
     }
   `)
-        : event === "DePin" && finalClaim.latitude && finalClaim.longitude
+        : event === "Encryption" && finalClaim.latitude && finalClaim.longitude
           ? await compose.executeQuery(`
   mutation{
-    createEthDen24DePin(input: {
+    createEncryptionEvent(input: {
       content: {
         recipient: "${finalClaim.recipient}"
         latitude: ${finalClaim.latitude}
@@ -267,10 +262,10 @@ export default function Attest() {
     }
   }
 `)
-          : event === "RepConnect" && !finalClaim.latitude
+          : event === "Wallet" && !finalClaim.latitude
             ? await compose.executeQuery(`
       mutation{
-        createEthDen24RepCon(input: {
+        createWalletEvent(input: {
           content: {
             recipient: "${finalClaim.recipient}"
             timestamp: "${finalClaim.timestamp}"
@@ -287,10 +282,10 @@ export default function Attest() {
         }
       }
     `)
-            : event === "DePin" && !finalClaim.latitude
+            : event === "Encryption" && !finalClaim.latitude
               ? await compose.executeQuery(`
      mutation{
-       createEthDen24DePin(input: {
+       createEncryptionEvent(input: {
          content: {
            recipient: "${finalClaim.recipient}"
            timestamp: "${finalClaim.timestamp}"
@@ -333,6 +328,10 @@ export default function Attest() {
   useEffect(() => {
     void getParams();
     void updateTime();
+    console.log({
+      "encryption event id": definition.models.EncryptionEvent.id,
+      "wallet event id": definition.models.WalletEvent.id,
+    });
   }, [address]);
 
   return (
@@ -416,66 +415,66 @@ export default function Attest() {
           </div>
         </form>
         <div className="flex-auto flex-row flex-wrap items-center justify-center">
-          {repBadge !== null && (
+          {encryptionBadge !== null && (
             <div className="mt-4 w-auto max-w-full shrink-0 rounded-md border-2 border-emerald-600">
               <label className="flex px-3 py-2 text-sm font-semibold text-gray-800">
-                RepConnect Badge
+                Encryption Event Badge
               </label>
               <p className="w-full rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
                 Recipient:{" "}
-                {repBadge?.recipient.slice(0, 6) +
+                {encryptionBadge?.recipient.slice(0, 6) +
                   "..." +
-                  repBadge?.recipient.slice(-4)}
+                  encryptionBadge?.recipient.slice(-4)}
               </p>
               <p className="w-full rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                Timestamp: {repBadge?.timestamp}
+                Timestamp: {encryptionBadge?.timestamp}
               </p>
-              {repBadge.latitude && (
+              {encryptionBadge.latitude && (
                 <p className="w-full rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                  Latitude: {repBadge?.latitude}
+                  Latitude: {encryptionBadge?.latitude}
                 </p>
               )}
-              {repBadge.longitude && (
+              {encryptionBadge.longitude && (
                 <p className="w-full rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                  Longitude: {repBadge?.longitude}
+                  Longitude: {encryptionBadge?.longitude}
                 </p>
               )}
-              {repBadge.verified && (
+              {encryptionBadge.verified && (
                 <p className="w-full rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                  Verified: {repBadge?.verified ? "true" : "false"}
+                  Verified: {encryptionBadge?.verified ? "true" : "false"}
                 </p>
               )}
             </div>
           )}
-          {dePinBadge !== null && (
+          {walletBadge !== null && (
             <div className="mt-4 w-auto max-w-full shrink-0 rounded-md border-2 border-emerald-600">
               <label className="flex px-3 py-2 text-sm font-semibold text-gray-800">
-                DePin Badge
+                Wallet Event Badge
               </label>
               <p className="rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
                 Recipient:{" "}
-                {dePinBadge?.recipient
-                  ? dePinBadge?.recipient.slice(0, 6) +
+                {walletBadge?.recipient
+                  ? walletBadge?.recipient.slice(0, 6) +
                     "..." +
-                    dePinBadge?.recipient.slice(-4)
+                    walletBadge?.recipient.slice(-4)
                   : ""}
               </p>
               <p className="rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                Timestamp: {dePinBadge?.timestamp}
+                Timestamp: {walletBadge?.timestamp}
               </p>
-              {dePinBadge.latitude && (
+              {walletBadge.latitude && (
                 <p className="rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                  Latitude: {dePinBadge?.latitude}
+                  Latitude: {walletBadge?.latitude}
                 </p>
               )}
-              {dePinBadge.longitude && (
+              {walletBadge.longitude && (
                 <p className="rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                  Longitude: {dePinBadge?.longitude}
+                  Longitude: {walletBadge?.longitude}
                 </p>
               )}
-              {dePinBadge.verified && (
+              {walletBadge.verified && (
                 <p className="w-full rounded-md border px-3 py-2 focus:border-indigo-600 focus:outline-none">
-                  Verified: {dePinBadge?.verified ? "true" : "false"}
+                  Verified: {walletBadge?.verified ? "true" : "false"}
                 </p>
               )}
             </div>

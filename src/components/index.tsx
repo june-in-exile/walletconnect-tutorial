@@ -71,7 +71,6 @@ export default function Attest() {
         ? setEvent("Wallet")
         : null;
 
-    if (eventItem) {
       const data = await compose.executeQuery<{
         node: {
           encryptionEvent: Encryption | null;
@@ -178,7 +177,7 @@ export default function Attest() {
         setEncryptionBadge(encryption);
         setWalletBadge(wallet);
       }
-    }
+    
   };
 
   const createBadge = async () => {

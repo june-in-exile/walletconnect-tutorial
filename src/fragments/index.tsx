@@ -13,7 +13,7 @@ import { CeramicClient } from "@ceramicnetwork/http-client";
 import { ComposeClient } from "@composedb/client";
 import { definition } from "@/__generated__/definition";
 import { type GetWalletClientResult } from "@wagmi/core";
-import { DID } from "dids";
+import { type DID } from "dids";
 
 type ComposeDBProps = {
   children: ReactNode;

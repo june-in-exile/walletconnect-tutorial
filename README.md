@@ -1,4 +1,4 @@
-# Event Attendance Demo App
+# Event Attendance WalletConnect Demo App
 
 This demo application coincides with a separate tutorial that shows how WalletConnect's Web3Modal can be used with Ceramic to initiatiate authenticated user sessions.
 

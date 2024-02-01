@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { useComposeDB } from "@/fragments";
 import { DNA } from "react-loader-spinner";
 import { DID, type DagJWS } from "dids";
@@ -38,6 +38,7 @@ export default function Attest() {
   });
   const [time, setTime] = useState<Date>();
   const { address } = useAccount();
+  const chainId = useChainId();
 
   const getUserLocation = () => {
     // if geolocation is supported by the users browser
@@ -78,7 +79,7 @@ export default function Attest() {
       };
     }>(`
         query {
-          node(id: "${`did:pkh:eip155:1:${address?.toLowerCase()}`}") {
+          node(id: "${`did:pkh:eip155:${chainId}:${address?.toLowerCase()}`}") {
           ... on CeramicAccount {
                 walletEvent {
                 id
@@ -338,7 +339,7 @@ export default function Attest() {
       "encryption event id": definition.models.EncryptionEvent.id,
       "wallet event id": definition.models.WalletEvent.id,
     });
-  }, [address]);
+  }, [address, chainId]);
 
   return (
     <div className="flex min-h-screen min-w-full flex-col items-center justify-start gap-6 px-4 py-8 sm:py-16 md:py-24">

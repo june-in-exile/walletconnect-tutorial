@@ -5,12 +5,12 @@ import { WagmiConfig } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
 import "@/styles/globals.css";
 
-const PROJECT_ID = ''
+const projectId = ''
 
 const chains = [mainnet]
-const wagmiConfig = defaultWagmiConfig({ chains, projectId: PROJECT_ID })
+const wagmiConfig = defaultWagmiConfig({ chains, projectId })
 
-createWeb3Modal({ wagmiConfig, projectId: PROJECT_ID, chains })
+createWeb3Modal({ wagmiConfig, projectId, chains })
 
 
 const MyApp = ({ Component, pageProps }: AppProps) => {

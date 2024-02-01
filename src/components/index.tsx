@@ -71,14 +71,14 @@ export default function Attest() {
         ? setEvent("Wallet")
         : null;
 
-      const data = await compose.executeQuery<{
-        node: {
-          encryptionEvent: Encryption | null;
-          walletEvent: Wallet | null;
-        };
-      }>(`
+    const data = await compose.executeQuery<{
+      node: {
+        encryptionEvent: Encryption | null;
+        walletEvent: Wallet | null;
+      };
+    }>(`
         query {
-          node(id: "${localStorage.getItem("did")}") {
+          node(id: "${`did:pkh:eip155:1:${address?.toLowerCase()}`}") {
           ... on CeramicAccount {
                 walletEvent {
                 id
@@ -100,84 +100,91 @@ export default function Attest() {
           }
         }
       `);
-      console.log(data);
-      if (
-        data as {
-          data: {
-            node: {
-              encryptionEvent: Encryption | null;
-              walletEvent: Wallet | null;
-            };
+    console.log(data);
+    if (
+      data as {
+        data: {
+          node: {
+            encryptionEvent: Encryption | null;
+            walletEvent: Wallet | null;
           };
-        }
-      ) {
-        console.log("test");
-        const encryption = (
-          data as {
-            data: {
-              node: {
-                encryptionEvent: Encryption | null;
-                walletEvent: Wallet | null;
-              };
-            };
-          }
-        ).data.node.encryptionEvent;
-        console.log(encryption);
-
-        const wallet = (
-          data as {
-            data: {
-              node: {
-                encryptionEvent: Encryption | null;
-                walletEvent: Wallet | null;
-              };
-            };
-          }
-        ).data.node.walletEvent;
-        console.log(wallet);
-
-        if (encryption?.jwt) {
-          try {
-            const json = Buffer.from(encryption.jwt, "base64").toString();
-            const parsed = JSON.parse(json) as { jws: DagJWS };
-            console.log(parsed);
-            const newDid = new DID({ resolver: KeyResolver.getResolver() });
-            const result = await newDid.verifyJWS(parsed.jws);
-            const didFromJwt = result.didResolutionResult.didDocument?.id;
-            console.log("This is the payload: ", didFromJwt);
-            if (
-              didFromJwt ===
-              "did:key:z6MkqusKQfvJm7CPiSRkPsGkdrVhTy8EVcQ65uB5H2wWzMMQ"
-            ) {
-              encryption.verified = true;
-            }
-          } catch (e) {
-            console.log(e);
-          }
-        }
-        if (wallet?.jwt) {
-          try {
-            const json = Buffer.from(wallet.jwt, "base64").toString();
-            const parsed = JSON.parse(json) as { jws: DagJWS };
-            console.log(parsed);
-            const newDid = new DID({ resolver: KeyResolver.getResolver() });
-            const result = await newDid.verifyJWS(parsed.jws);
-            const didFromJwt = result.didResolutionResult.didDocument?.id;
-            console.log("This is the payload: ", didFromJwt);
-            if (
-              didFromJwt ===
-              "did:key:z6MkqusKQfvJm7CPiSRkPsGkdrVhTy8EVcQ65uB5H2wWzMMQ"
-            ) {
-              wallet.verified = true;
-            }
-          } catch (e) {
-            console.log(e);
-          }
-        }
-        setEncryptionBadge(encryption);
-        setWalletBadge(wallet);
+        };
       }
-    
+    ) {
+      const encryption = data as {
+        data: {
+          node: {
+            encryptionEvent: Encryption | null;
+            walletEvent: Wallet | null;
+          };
+        };
+      };
+      if (encryption.data.node === null) {
+        console.log("null value");
+        return;
+      }
+      console.log(encryption);
+
+      const wallet = data as {
+        data: {
+          node: {
+            encryptionEvent: Encryption | null;
+            walletEvent: Wallet | null;
+          };
+        };
+      };
+      if (wallet.data.node === null) {
+        console.log("null value");
+        return;
+      }
+
+      if (encryption.data.node.encryptionEvent?.jwt) {
+        try {
+          const json = Buffer.from(
+            encryption.data.node.encryptionEvent?.jwt,
+            "base64",
+          ).toString();
+          const parsed = JSON.parse(json) as { jws: DagJWS };
+          console.log(parsed);
+          const newDid = new DID({ resolver: KeyResolver.getResolver() });
+          const result = await newDid.verifyJWS(parsed.jws);
+          const didFromJwt = result.didResolutionResult.didDocument?.id;
+          console.log("This is the payload: ", didFromJwt);
+          if (
+            didFromJwt ===
+            "did:key:z6MkqusKQfvJm7CPiSRkPsGkdrVhTy8EVcQ65uB5H2wWzMMQ"
+          ) {
+            encryption.data.node.encryptionEvent.verified = true;
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+      if (wallet.data.node.walletEvent?.jwt) {
+        try {
+          const json = Buffer.from(
+            wallet.data.node.walletEvent.jwt,
+            "base64",
+          ).toString();
+          const parsed = JSON.parse(json) as { jws: DagJWS };
+          console.log(parsed);
+          const newDid = new DID({ resolver: KeyResolver.getResolver() });
+          const result = await newDid.verifyJWS(parsed.jws);
+          const didFromJwt = result.didResolutionResult.didDocument?.id;
+          console.log("This is the payload: ", didFromJwt);
+          if (
+            didFromJwt ===
+            "did:key:z6MkqusKQfvJm7CPiSRkPsGkdrVhTy8EVcQ65uB5H2wWzMMQ"
+          ) {
+            wallet.data.node.walletEvent.verified = true;
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+      setEncryptionBadge(encryption.data.node.encryptionEvent);
+      setWalletBadge(wallet.data.node.walletEvent);
+    }
   };
 
   const createBadge = async () => {

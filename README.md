@@ -28,7 +28,7 @@ If you explore your composedb.config.json and admin_seed.txt files, you will now
 
 3. Create a .env file and copy-paste the contents of the existing .env.example file into it
 
-4. Create a WalletConnect project ID by visiting https://cloud.walletconnect.com/sign-in, create a new project (with a name of your choosing and the `App` type selected), and copy the `Project ID` key once available. You will need to enter this into src/pages/_app.tsx on line 8 to assign to the `PROJECT_ID` value.
+4. Create a WalletConnect project ID by visiting https://cloud.walletconnect.com/sign-in, create a new project (with a name of your choosing and the `App` type selected), and copy the `Project ID` key once available. You will need to enter this into src/pages/_app.tsx on line 8 to assign to the `projectId` value.
 
 
 4. Finally, run your application in a new terminal (first ensure you are running node v20 in your terminal):

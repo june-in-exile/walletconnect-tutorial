@@ -45,11 +45,10 @@ export const ComposeDB = ({ children }: ComposeDBProps) => {
         walletClient: GetWalletClientResult | undefined,
       ) {
         if (walletClient) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const accountId = await getAccountId(
+          const accountId = (await getAccountId(
             walletClient,
             walletClient.account.address,
-          );
+          )) as string;
           const authMethod = await EthereumWebAuth.getAuthMethod(
             walletClient,
             accountId,

@@ -2,6 +2,10 @@
 
 This demo application coincides with a separate tutorial that shows how WalletConnect's Web3Modal can be used with Ceramic to initiatiate authenticated user sessions.
 
+## Tutorial
+
+[WalletConnect Tutorial: Create User Sessions with Web3Modal](https://blog.ceramic.network/walletconnect-tutorial/?ref=defiplot.com)
+
 ## Getting Started
 
 Use the below steps to get started locally:
